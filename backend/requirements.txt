@@ -1,0 +1,7 @@
+google-generativeai
+python-dotenv
+paramiko
+reportlab
+Flask
+pyyaml
+Flask-CORS
