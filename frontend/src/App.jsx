@@ -11,6 +11,8 @@ import AssetsPage from "./pages/Dashboard/AssetsPage";
 import ReportsPage from "./pages/Dashboard/ReportsPage";
 import SummariesPage from "./pages/Dashboard/SummariesPage";
 import MonitoringPage from "./pages/Dashboard/MonitoringPage";
+import NotificationPage from "./pages/Dashboard/NotificationPage"
+import SettingsPage from "./pages/Dashboard/SettingsPage";
 
 export default function App() {
   return (
@@ -40,6 +42,8 @@ export default function App() {
           <Route path="reports" element={<ReportsPage />} />
           <Route path="summaries" element={<SummariesPage />} />
           <Route path="monitoring" element={<MonitoringPage />} />
+          <Route path="notifications" element={<NotificationPage />} />
+          <Route path="settings" element={<SettingsPage />} />
         </Route>
 
         {/* Ruta catch-all */}
