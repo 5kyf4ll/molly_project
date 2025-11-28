@@ -17,7 +17,7 @@ export default function LoginPage() {
 
         if (isValid) {
             login(username);
-            navigate("/chat");
+            navigate("/dashboard");
         } else {
             alert("Credenciales incorrectas");
         }
