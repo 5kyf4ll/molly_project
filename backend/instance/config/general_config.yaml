@@ -1,4 +1,4 @@
 # config/general_config.yaml
-GEMINI_MODEL: models/gemini-1.5-flash-latest
+GEMINI_MODEL: models/gemini-2.0-flash
 NMAP_TIMEOUT_SECONDS: 600 # Aumentado a 10 minutos por si los escaneos reales tardan
 SCAN_OUTPUT_DIR: scans
