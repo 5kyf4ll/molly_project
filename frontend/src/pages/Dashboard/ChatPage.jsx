@@ -1,6 +1,7 @@
 // src/pages/Dashboard/ChatPage.jsx
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Loader2, Send } from "lucide-react";
+import { sendMessageToMolly } from "../../api/mollyApi";
 
 // -------------- Componente de Chat Panel --------------
 const ChatPanel = ({ sendMessage, messages, isSending }) => {
@@ -91,31 +92,33 @@ const ChatPanel = ({ sendMessage, messages, isSending }) => {
 // ---------------------- CHAT PAGE ------------------------
 // --------------------------------------------------------
 
-import { useEffect, useRef } from "react";
-
 export default function ChatPage() {
   const [messages, setMessages] = useState([]);
   const [isSending, setIsSending] = useState(false);
 
-  // --- FUNCION PARA SIMULAR RESPUESTA DE MOLLY ---
+  // --- CONEXION REAL CON BACKEND ---
   const sendMessage = async (text) => {
-    // Añadir mensaje del usuario
+    // añadir mensaje del usuario
     setMessages(prev => [...prev, { sender: "user", text }]);
     setIsSending(true);
 
-    // Simular generacion de respuesta
-    await new Promise(resolve => setTimeout(resolve, 1200));
+    // llamar API real
+    const res = await sendMessageToMolly(text);
 
-    // Respuesta dummy (luego conectarás con tu backend real)
-    const mollyReply = "Hola, soy Molly. Te ayudare con lo que necesites.";
+    let reply = "Error al obtener respuesta";
 
-    setMessages(prev => [...prev, { sender: "molly", text: mollyReply }]);
+    if (res?.response?.response) {
+      reply = res.response.response;
+    }
+
+    // añadir respuesta de Molly
+    setMessages(prev => [...prev, { sender: "molly", text: reply }]);
     setIsSending(false);
   };
 
   return (
     <div className="h-full">
-      <ChatPanel 
+      <ChatPanel
         sendMessage={sendMessage}
         messages={messages}
         isSending={isSending}

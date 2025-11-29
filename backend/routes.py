@@ -45,6 +45,57 @@ def register_routes(app):
 
         return jsonify({"error": "Credenciales invalidas"}), 401
 
+        # -----------------------------------------------------
+    # X. CHAT DIRECTO CON GEMINI (API DE GOOGLE)
+    # -----------------------------------------------------
+    @app.route('/api/gemini/chat', methods=['POST'])
+    def gemini_chat_api():
+        if not require_auth():
+            return jsonify({"error": "Sesion no valida"}), 401
+
+        data = request.get_json()
+        user_message = data.get("message")
+
+        if not user_message:
+            return jsonify({"error": "Mensaje vacio"}), 400
+
+        try:
+            # Obtener API Key desde config
+            api_key = current_app.config["GEMINI_API_KEY"]
+            model = current_app.config["GEMINI_MODEL"]
+
+            import requests
+
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+
+            payload = {
+                "contents": [
+                    {"parts": [{"text": user_message}]}
+                ]
+            }
+
+            response = requests.post(url, json=payload)
+
+            if response.status_code != 200:
+                return jsonify({
+                    "error": "Error desde Gemini API",
+                    "details": response.text
+                }), 500
+
+            data = response.json()
+
+            # Extraer el texto generado
+            output = data["candidates"][0]["content"]["parts"][0]["text"]
+
+            return jsonify({
+                "response": output
+            }), 200
+
+        except Exception as e:
+            current_app.logger.error(f"Error en /api/gemini/chat: {e}", exc_info=True)
+            return jsonify({"error": "Error interno con Gemini"}), 500
+
+
     # -----------------------------------------------------
     # VALIDACIÓN
     # -----------------------------------------------------
