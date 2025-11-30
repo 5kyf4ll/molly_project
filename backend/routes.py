@@ -1,3 +1,4 @@
+# routes.py
 from flask import request, jsonify, current_app, send_from_directory, url_for, make_response
 from flask_cors import CORS
 import logging
@@ -9,27 +10,33 @@ logger = logging.getLogger(__name__)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Crear el manejador global de sesiones de usuario
+# Manejador global de sesiones
 auth_sessions = AuthSessionManager()
 
 
 def register_routes(app):
-    """
-    Registra todas las rutas (endpoints) de la API de Molly.
-    """
 
-    CORS(app)
+    # ------------------------------
+    # CORS CONFIGURADO CORRECTAMENTE
+    # ------------------------------
+    CORS(app,
+         supports_credentials=True,
+         origins=[
+             "http://192.168.1.38:3000",
+             "http://127.0.0.1:3000",
+             "http://localhost:3000"
+         ])
 
-    # -----------------------------------------------------
+    # ------------------------------
     # 1. HEALTH CHECK
-    # -----------------------------------------------------
+    # ------------------------------
     @app.route('/', methods=['GET'])
     def health_check():
         return jsonify({"status": "Backend OK", "service": "Molly API"}), 200
 
-    # -----------------------------------------------------
-    # 2. LOGIN REAL (con token via cookie)
-    # -----------------------------------------------------
+    # ------------------------------
+    # 2. LOGIN
+    # ------------------------------
     @app.route('/api/login', methods=['POST'])
     def login_api():
         data = request.get_json()
@@ -37,17 +44,35 @@ def register_routes(app):
         password = data.get("password")
 
         if username == "admin" and password == "admin":
-            token = auth_sessions.create_session(user_id=1)
 
-            resp = jsonify({"message": "Login OK"})
-            resp.set_cookie("session", token, httponly=True)
+            token = auth_sessions.create_session(user_id=1)
+            resp = jsonify({"success": True})
+
+            # cookie
+            resp.set_cookie(
+                "session",
+                token,
+                httponly=True,
+                samesite="Lax"
+            )
+
             return resp, 200
 
-        return jsonify({"error": "Credenciales invalidas"}), 401
+        return jsonify({"success": False}), 401
 
-        # -----------------------------------------------------
-    # X. CHAT DIRECTO CON GEMINI (API DE GOOGLE)
-    # -----------------------------------------------------
+    # ------------------------------
+    # Funciones internas de validacion
+    # ------------------------------
+    def require_auth():
+        token = request.cookies.get("session")
+        return auth_sessions.validate_session(token)
+
+    def get_user_token():
+        return request.cookies.get("session")
+
+    # ------------------------------
+    # 3. GEMINI DIRECTO
+    # ------------------------------
     @app.route('/api/gemini/chat', methods=['POST'])
     def gemini_chat_api():
         if not require_auth():
@@ -60,7 +85,6 @@ def register_routes(app):
             return jsonify({"error": "Mensaje vacio"}), 400
 
         try:
-            # Obtener API Key desde config
             api_key = current_app.config["GEMINI_API_KEY"]
             model = current_app.config["GEMINI_MODEL"]
 
@@ -83,8 +107,6 @@ def register_routes(app):
                 }), 500
 
             data = response.json()
-
-            # Extraer el texto generado
             output = data["candidates"][0]["content"]["parts"][0]["text"]
 
             return jsonify({
@@ -95,20 +117,9 @@ def register_routes(app):
             current_app.logger.error(f"Error en /api/gemini/chat: {e}", exc_info=True)
             return jsonify({"error": "Error interno con Gemini"}), 500
 
-
-    # -----------------------------------------------------
-    # VALIDACIÓN
-    # -----------------------------------------------------
-    def require_auth():
-        token = request.cookies.get("session")
-        return auth_sessions.validate_session(token)
-
-    def get_user_token():
-        return request.cookies.get("session")
-
-    # -----------------------------------------------------
-    # 3. CHAT CON MOLLY
-    # -----------------------------------------------------
+    # ------------------------------
+    # 4. CHAT CON MOLLY
+    # ------------------------------
     @app.route('/api/chat', methods=['POST'])
     def chat_api():
         if not require_auth():
@@ -120,7 +131,6 @@ def register_routes(app):
         if not user_message:
             return jsonify({"error": "Mensaje vacio"}), 400
 
-        # ID de chat unico por usuario (basado en su token)
         token = get_user_token()
         chat_session_id = f"chat-{token}"
 
@@ -130,7 +140,6 @@ def register_routes(app):
                 chat_session_id=chat_session_id
             )
 
-            # Sesion de trabajo de Molly (escaneos)
             scan_info = current_app.session_manager.get_current_scan_info()
 
             return jsonify({
@@ -143,9 +152,9 @@ def register_routes(app):
             current_app.logger.error(f"Error en /api/chat: {e}", exc_info=True)
             return jsonify({"error": "Error interno"}), 500
 
-    # -----------------------------------------------------
-    # 4. CHECK SCAN STATUS
-    # -----------------------------------------------------
+    # ------------------------------
+    # 5. CHECK SCAN STATUS
+    # ------------------------------
     @app.route('/api/check_scan_status/<int:scan_id>', methods=['GET'])
     def check_scan_status(scan_id):
         if not require_auth():
@@ -168,9 +177,9 @@ def register_routes(app):
 
         return jsonify({"status": "in_progress"}), 200
 
-    # -----------------------------------------------------
-    # 5. SESSION STATUS
-    # -----------------------------------------------------
+    # ------------------------------
+    # 6. SESSION STATUS
+    # ------------------------------
     @app.route('/api/session_status', methods=['GET'])
     def get_session_status_api():
         if not require_auth():
@@ -183,9 +192,9 @@ def register_routes(app):
             "active_project": scan_info.get("session_name"),
         }), 200
 
-    # -----------------------------------------------------
-    # 6. LISTA DE ESCANEOS
-    # -----------------------------------------------------
+    # ------------------------------
+    # 7. LISTA DE ESCANEOS
+    # ------------------------------
     @app.route('/api/scans', methods=['GET'])
     def get_all_scans_api():
         if not require_auth():
@@ -194,9 +203,9 @@ def register_routes(app):
         scans = current_app.data_manager.get_all_scan_sessions()
         return jsonify(scans), 200
 
-    # -----------------------------------------------------
-    # 7. VER PDF DEL REPORTE
-    # -----------------------------------------------------
+    # ------------------------------
+    # 8. VIEW PDF
+    # ------------------------------
     @app.route('/view_report/<int:scan_id>')
     def view_report(scan_id):
         if not require_auth():

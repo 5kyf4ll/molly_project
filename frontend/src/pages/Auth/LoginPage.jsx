@@ -13,15 +13,17 @@ export default function LoginPage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const isValid = await loginRequest(username, password);
 
-        if (isValid) {
+        const success = await loginRequest(username, password);
+
+        if (success) {
             login(username);
             navigate("/dashboard");
         } else {
             alert("Credenciales incorrectas");
         }
     };
+
 
     return (
         <div className="min-h-screen bg-[#0f111a] flex items-center justify-center p-4">

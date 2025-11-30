@@ -9,12 +9,15 @@ export async function loginRequest(username, password) {
       body: JSON.stringify({ username, password })
     });
 
-    return await res.json();
+    const data = await res.json();
+
+    return data.success;   // <- AHORA SI REGRESAMOS TRUE / FALSE
   } catch (e) {
     console.error("Error en login:", e);
-    return { success: false, error: "Error conectando con el servidor" };
+    return false;
   }
 }
+
 
 export async function sendMessageToMolly(message) {
   try {
