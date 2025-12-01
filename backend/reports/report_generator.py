@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class ReportGenerator:
     # EL CAMBIO CRUCIAL ESTÁ AQUÍ: 
     # Cambiamos 'output_dir' por 'report_path_root' para que coincida con el código que llama.
-    def __init__(self, report_path_root: str = 'scans', report_formatter: ReportFormatter = None):
+    def __init__(self, report_path_root: str = '../instance/scans', report_formatter: ReportFormatter = None):
         # La variable interna sigue siendo 'self.output_dir'
         self.output_dir = report_path_root 
         

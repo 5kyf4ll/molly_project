@@ -1,1 +1,1 @@
-- Corregir problema al precionar f5 me envia nuevamente al login
+- volver a reformular la estructura del backend que la version anterior
