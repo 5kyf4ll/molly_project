@@ -1,1 +1,2 @@
 - volver a reformular la estructura del backend que la version anterior
+- generar la data/molly_scans.db fuera de core y dentroo de instance/
